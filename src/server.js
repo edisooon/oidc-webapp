@@ -58,6 +58,15 @@ app.get('/remove-to-do/:id', async (req, res) => {
   res.status(501).send();
 });
 
-app.listen(3000, () => {
-  console.log(`Server running on http://localhost:3000`);
+// Fetch Information from the Discovery Endpoint
+const discEnd = 'https://dev-oeat2inrsl0jpupa.us.auth0.com/.well-known/openid-configuration'; // ${OIDC_PROVIDER}
+request(discEnd).then((res) => {
+  oidcProviderInfo = JSON.parse(res);
+  app.listen(3000, () => {
+    console.log('Server running on http://localhost:3000');
+  });
+}).catch((error) => {
+  console.error(error);
+  console.error('Unable to get OIDC endpoints for ${OIDC_PROVIDER}');
+  process.exit(1);
 });
