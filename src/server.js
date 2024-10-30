@@ -42,8 +42,35 @@ app.get('/profile', (req, res) => {
   });
 });
 
+// initiating the Authentication Process
 app.get('/login', (req, res) => {
-  res.status(501).send();
+  // define constants for the authorization request
+  const authorizationEndpoint = oidcProviderInfo['authorization_endpoint'];
+  const responseMode = 'form_post';
+  const responseType = 'id_token';
+  const scope = 'openid';
+  const clientID = "UecQ5gFv4vLkwWTLyHafEkdrpPGekpsF" // ${CLIENT_ID}: in auth0
+  const redirectUri = 'http://localhost:3000/callback';
+  const nonce = crypto.randomBytes(16).toString('hex');
+  // define a signed cookie containing the nonce value
+  const options = {
+    maxAge: 1000 * 60 * 15,
+    httpOnly: true, // The cookie only accessible by the web server
+    signed: true  // Indicates if the cookie should be signed
+  }
+
+  // add cookie to the response and issue a 302 redirecting user
+  res
+    .cookie(nonceCookie, nonce, options)
+    .redirect(
+      authorizationEndpoint +
+      '?response_mode=' + responseMode +
+      '&response_type=' + responseType +
+      '&scope=' + scope +
+      '&client_id=' + clientID +
+      '&redirect_uri=' + redirectUri +
+      '&nonce=' + nonce
+    )
 });
 
 app.post('/callback', async (req, res) => {
@@ -59,7 +86,7 @@ app.get('/remove-to-do/:id', async (req, res) => {
 });
 
 // Fetch Information from the Discovery Endpoint
-const discEnd = 'https://dev-oeat2inrsl0jpupa.us.auth0.com/.well-known/openid-configuration'; // ${OIDC_PROVIDER}
+const discEnd = 'https://dev-oeat2inrsl0jpupa.us.auth0.com/.well-known/openid-configuration'; // ${OIDC_PROVIDER}: domain in auth0
 request(discEnd).then((res) => {
   oidcProviderInfo = JSON.parse(res);
   app.listen(3000, () => {
